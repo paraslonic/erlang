@@ -1,25 +1,26 @@
 -module(router).
--export([start/0, loop/1, print_list/1, map/2, train_spot/0]).
+-export([start/0, loop/1, print_list/1, map/2, train_spot/1]).
 
 
 start() ->
-	register(spotter, spawn(router, train_spot, [])),
 	A = station:start(5, a, 1, 3),
 	B = station:start(5, b, 11, 13),
-	Stations = [A, B, C, D],
+	Stations = [A, B],
+	register(spotter, spawn(router, train_spot, [Stations])),
 	register(router, spawn(router, loop, [Stations])).
 
-train_spot() ->
+train_spot(Stations) ->
 	receive
 		{spot,Pid, X} ->
-			io:format("~p ~p ~n", [Pid, X]),
-			S = hd(Stations),
-		       	Result = S!{is_iam_here, Pid, X},
-			io:format("~p			train_spot().			
-
+			%io:format("~p ~p ~n", [Pid, X]),
+			map(fun(S) -> S ! {is_iam_here, Pid, X} end, Stations),
+	  		train_spot(Stations);
+		{train_at_station, Station, Train} ->
+			io:format("train ~p is at ~p~n",[Train, Station]),
+			train_spot(Stations);
 
 		stop -> true;
-		_ -> io:format("what?"), train_spot()
+		_ -> io:format("what?"), train_spot(Stations)
 		
 	end.
 loop(Stations) ->
