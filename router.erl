@@ -3,8 +3,8 @@
 
 
 start() ->
-	A = station:start(5, a, 1, 3),
-	B = station:start(5, b, 11, 13),
+	A = station:start(a, 1, 3),
+	B = station:start(b, 11, 13),
 	Stations = [A, B],
 	register(spotter, spawn(router, train_spot, [Stations])),
 	register(router, spawn(router, loop, [Stations])).
@@ -17,6 +17,11 @@ train_spot(Stations) ->
 	  		train_spot(Stations);
 		{train_at_station, Station, Train} ->
 			io:format("train ~p is at ~p~n",[Train, Station]),
+			train_spot(Stations);
+		
+		{train_arrived, Station, Train} ->
+			io:format("train ~p arrived at ~p~n",[Train, Station]),
+			Train ! {stop, 5000},
 			train_spot(Stations);
 
 		stop -> true;

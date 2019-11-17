@@ -14,7 +14,8 @@ loop(X, Dir, Xmax) ->
 	end,
 	receive
 		{stop, Time} ->
-			sleep(Time);
+			sleep(Time),
+			loop(X, Dir, Xmax);
 		stop ->
 			true
 		

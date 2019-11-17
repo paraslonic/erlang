@@ -1,28 +1,37 @@
 -module(station).
--export([start/4, init/4, loop/4]).
+-export([start/3, init/3, loop/5, adduniq/2]).
 
-start(N, NAME, X1, X2) ->
+start(NAME, X1, X2) ->
 	io:format("started~n"),
-	spawn(?MODULE, init, [N, NAME, X1, X2]).
+	spawn(?MODULE, init, [NAME, X1, X2]).
 
-init(N, NAME, X1, X2) ->
+init(NAME, X1, X2) ->
 	io:format("inited~n"),
-	loop(N, NAME, X1, X2).
+	loop(NAME, X1, X2, [],[]).
 
-loop(N, NAME, X1, X2) ->
+loop(NAME, X1, X2, Tvis, Tstop) ->
 	receive
-		{add, X} ->
-			loop(N+X, NAME, X1, X2);
 		{stop} ->
 			true;
 		{is_iam_here, Pid, X} ->
-			case(X >= X1 andalso X =< X2) of
-				true -> spotter ! {train_at_station, NAME, Pid};
-				_Else -> false
-			end,
-			loop(N, NAME, X1, X2);
+			if
+				X == X1 ->
+					spotter ! {train_arrived, NAME, Pid},
+					loop(NAME, X1, X2, Tvis--[Pid], adduniq(Pid, Tstop));
+				X > X1 andalso X < X2 ->
+					spotter ! {train_at_station, NAME, Pid},
+					loop(NAME, X1, X2, adduniq(Pid, Tvis), Tstop--[Pid]);
+				true ->	 
+					loop(NAME, X1, X2, Tvis--[Pid], Tstop--[Pid])
+			end;
 
 		_ -> io:format("what?~n")
 	end.
 
+adduniq(X,[]) -> [X];
 
+adduniq(X, L) ->
+	case lists:member(X,L) of
+		true -> [X|L];
+		false -> L
+	end.
