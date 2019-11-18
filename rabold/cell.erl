@@ -18,7 +18,8 @@ loop(S) when is_record(S,state) ->
 		{add, volf, VPID} ->
 			V=S#state.v,
 			NewS=S#state{v=[VPID|V]},
-			io:format("~p~n",[NewS#state.v]),
+			io:format("added volf, current volves: ~p~n",[NewS#state.v]),
+			VPID!{locate, self()},
 			loop(NewS);
 		{add, zay, ZPID} ->
 			Z=S#state.z,
