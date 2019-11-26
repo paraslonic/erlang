@@ -2,6 +2,7 @@
 -compile(export_all).
 
 init() ->
+	register(monitor, spawn(mir, monitorloop, [])),
 	C1=cell:init(),
 	C2=cell:init(),
 	C3=cell:init(),
@@ -13,7 +14,16 @@ init() ->
 	C3!{link, C2, 1},
 	W=volf:init(),
 	W!{locate, C2},
-	W!{try_move, 1},
 	{C1,C2,C3, W}.
+
+
+monitorloop() ->
+	receive
+		{'DOWN', _Ref, process, Pid, Reason} ->
+			 io:format("~p exited with ~p ~n",[Pid, Reason]),
+			monitorloop();
+		{add, PID} -> erlang:monitor(process, PID), monitorloop()
+	end.
+
 
 %{C1, C2, C3, W} = mir:init()

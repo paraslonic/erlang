@@ -5,12 +5,12 @@
 
 init() ->
 	S=#state{n=#{1=>0, 2=>0}},
-	spawn(cell, loop, [S]).
+	CPID=spawn(cell, loop, [S]),
+	monitor ! {add, CPID},
+	CPID.
 
 print_state(S) ->
 	io:format("volves: ~p~n",[S#state.v]).
-
-
 
 
 loop(S) when is_record(S,state) ->
@@ -24,13 +24,20 @@ loop(S) when is_record(S,state) ->
 		{add, zay, ZPID} ->
 			Z=S#state.z,
 			NewS=S#state{z=[ZPID|Z]},
-			io:format("~p~n",[NewS#state.z]),
+			ZPID!{locate, self()},
+			io:format("added zay, current: ~p~n",[NewS#state.z]),
 			loop(NewS);
-		{move, volf, VPID, DIR} -> 
+		{move, ZVER, PID, DIR} -> 
 			case maps:find(DIR, S#state.n) of
 				{ok, C}->
-					C!{add, volf, VPID},
-					NewS=S#state{v=lists:delete(VPID,S#state.v)},
+					case ZVER of
+						zay->
+							C!{add, zay, PID},
+							NewS=S#state{v=lists:delete(PID,S#state.z)};
+						volf->	
+							C!{add, volf, PID},
+							NewS=S#state{v=lists:delete(PID,S#state.v)}
+					end,
 					loop(NewS);
 				_ -> loop(S)
 			end;
